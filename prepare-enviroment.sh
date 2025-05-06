@@ -1,29 +1,36 @@
 #!/usr/bin/env bash
-# Debe ejecutarse como root (sudo o su -).
+# Script para preparar entorno KVM/QEMU: instalar dependencias y configurar grupos.
+# Debe ejecutarse con sudo: sudo ./prepare-environment.sh
 set -euo pipefail
 
-# 1. Comprobar ejecución como root
-test "$EUID" -eq 0 || {
-  echo "Este script debe ejecutarse como root (sudo o su -)."
-  exit 1
-}
-
-# 2. Determinar usuario objetivo
-# - Si se ejecuta con sudo, SUDO_USER define el usuario original.
-# - Si se ejecuta como root directamente, puede pasarse como argumento.
-if [ -n "${SUDO_USER-}" ]; then
-  TARGET_USER="$SUDO_USER"
-elif [ $# -ge 1 ]; then
-  TARGET_USER="$1"
-else
-  echo "Uso: $0 [usuario]
-Ejecuta como root (sudo o su -). Si no usas sudo, especifica el usuario a configurar."
+# 1. Comprobar ejecución con sudo
+if [ "$EUID" -ne 0 ]; then
+  echo "ERROR: Ejecuta este script con sudo:"
+  echo "  sudo $0"
   exit 1
 fi
 
+# 2. Determinar usuario invocante
+# SUDO_USER se define cuando se usa sudo
+if [ -z "${SUDO_USER-}" ]; then
+  echo "ERROR: Este script debe invocarse con sudo por un usuario sin privilegios root."
+  exit 1
+fi
+TARGET_USER="$SUDO_USER"
 echo "🔧 Usuario objetivo: $TARGET_USER"
 
-# 3. Paquetes requeridos
+# 3. Verificar que el usuario está en el grupo sudo
+if ! getent group sudo | grep -qw "$TARGET_USER"; then
+  cat <<EOF
+ERROR: El usuario '$TARGET_USER' no pertenece al grupo sudo.
+Para proceder, añade el usuario al sudoers ejecutando como root (su -) o pide a un administrador:
+  usermod -aG sudo $TARGET_USER
+EOF
+  exit 1
+fi
+
+# 4. Paquetes requeridos
+# En Debian, 'virt-install' se provee en 'virtinst'; 'fuser' en 'psmisc'
 REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst python3 openssl lsof psmisc)
 
 echo "🔍 Comprobando dependencias..."
@@ -36,39 +43,21 @@ for pkg in "${REQUIRED[@]}"; do
   fi
 done
 
-# 4. Activar y arrancar libvirtd
+# 5. Activar y arrancar libvirtd
 echo "🔧 Habilitando y arrancando libvirtd"
 systemctl enable --now libvirtd
 
-# 5. Añadir usuario al grupo kvm
+# 6. Añadir usuario al grupo kvm
 echo "🔧 Añadiendo $TARGET_USER al grupo kvm"
 usermod -aG kvm "$TARGET_USER"
 
-# 6. Editar /etc/sudoers
-# Inserta debajo de la línea de root la entrada para TARGET_USER
-echo "🔧 Editando /etc/sudoers para añadir '$TARGET_USER'"
-# Hacer copia de seguridad
-cp /etc/sudoers /etc/sudoers.bak
-# Insertar usando sed
-sed -i "/^root[[:space:]]\+ALL=(ALL:ALL) ALL/ a \
-$TARGET_USER ALL=(ALL:ALL) ALL" /etc/sudoers
-# Validar sintaxis
-visudo -c
-
 # 7. Mensaje final
+echo
 cat <<EOF
 ✅ Entorno preparado para '$TARGET_USER'.
-Dependencias: ${REQUIRED[*]}.
-- '$TARGET_USER' añadido al grupo kvm.
-- /etc/sudoers actualizado con privilegios equivalentes a root.
 
-Ahora puedes ejecutar create-debian-vm.sh desde tu repositorio para crear la VM.
-EOF mensaje final
-cat <<EOF
-✅ Entorno preparado para '$TARGET_USER'.
-Dependencias: ${REQUIRED[*]}.
+- Dependencias instaladas: ${REQUIRED[*]}.
 - '$TARGET_USER' añadido al grupo kvm.
-- Sudo sin contraseña configurado en $SUDOERS_FILE.
 
-Ahora puedes ejecutar create-debian-vm.sh desde tu repositorio para crear la VM.
+Puedes ejecutar create-debian-vm.sh desde tu repositorio para crear la VM.
 EOF
