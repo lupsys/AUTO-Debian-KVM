@@ -7,15 +7,15 @@ set -euo pipefail
 PRESEED_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/preseed/preseed.cfg"
 
 # Credenciales aleatorias
-USER_NAME="user$(tr -dc 'a-z0-9' </dev/urandom | head -c8 || true)"
-PASSWORD="$(tr -dc 'a-z' </dev/urandom | head -c12 || true)"
-PASSWORD_HASH=$(openssl passwd -6 "$PASSWORD")
-
-echo "🔐 Usuario: $USER_NAME  Contraseña: $PASSWORD"
-# Guardar en home del usuario que ejecuta
+USER_NAME="debian"
+PASSWORD="lupsys1234"
+echo "🔐 Generando credenciales de usuario..."
+echo "Usuario: ${USER_NAME}"
+echo "Contraseña: ${PASSWORD}"
 CRED_FILE="${HOME}/user.txt"
 echo -e "Usuario: $USER_NAME
 Contraseña: $PASSWORD" >"$CRED_FILE"
+
 echo "→ Credenciales en $CRED_FILE"
 
 # Parámetros VM
@@ -35,8 +35,8 @@ virt-install \
   --location "$ISO_URL" \
   --extra-args "auto=true priority=critical \
 preseed/url=$PRESEED_URL \
-passwd/username=$USER_NAME \
-passwd/user-password-crypted=$PASSWORD_HASH \
 locale=en_US.UTF-8 keyboard-configuration/xkb-keymap=es interface=auto"
 
 echo "✅ Instalación iniciada. Conecta con SPICE."
+echo "Recuerda tu usuario y Contraseña es: 
+$(cat "$CRED_FILE")"
