@@ -18,7 +18,7 @@ echo "🔧 Usuario objetivo: $TARGET_USER"
 
 # 3. Paquetes requeridos
 # virt-install -> virtinst, fuser -> psmisc
-REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst python3 openssl lsof psmisc)
+REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst virt-manager python3 openssl lsof psmisc)
 
 echo "🔍 Comprobando dependencias..."
 for pkg in "${REQUIRED[@]}"; do
