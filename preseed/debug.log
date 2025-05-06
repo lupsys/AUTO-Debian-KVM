@@ -1,0 +1,17 @@
++ set -euo pipefail
++ TARGET_USER=lupsys
+++ eval echo '~lupsys'
++++ echo /home/lupsys
++ USER_HOME=/home/lupsys
++ PORT=8000
++ PRESEED_DIR=/home/lupsys/preseed
++ PRESEED_URL_BASE=http://192.168.122.1:8000
+++ date +%s
++ VM_NAME=debian-auto-1746557050
++ DISK_PATH=/var/lib/libvirt/images/debian-auto-1746557050.qcow2
++ ISO_PATH=/home/lupsys/Downloads/debian-12.10.0-amd64-netinst.iso
++ HOST_IP=192.168.122.1
++ mkdir -p /home/lupsys/preseed
+++ tr -dc a-z0-9
+++ head -c8
++ USERNAME=userceh21ny1
