@@ -10,7 +10,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # 2. Paquetes requeridos
-REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst python3 openssl lsof fuser)
+REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst python3 openssl lsof psmisc)
 
 echo "🔍 Comprobando dependencias..."
 for pkg in "${REQUIRED[@]}"; do
