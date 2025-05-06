@@ -38,6 +38,7 @@ systemctl enable --now libvirtd
 # 5. Añadir usuario al grupo kvm
 echo "🔧 Añadiendo $TARGET_USER al grupo kvm..."
 usermod -aG kvm "$TARGET_USER"
+usermod -aG libvirt "$TARGET_USER"
 
 # 6. Mensaje final
 echo
