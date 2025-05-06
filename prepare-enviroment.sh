@@ -1,5 +1,3 @@
-# prepare-environment.sh
-```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -29,7 +27,7 @@ echo "🔧 Habilitando y arrancando libvirtd"
 systemctl enable --now libvirtd
 
 # 4. Crear grupo kvm y añadir al usuario invocante
-USER_REAL="${SUDO_USER:-$SUDO_USER}"  # si se invoca con sudo, usa SUDO_USER
+USER_REAL="${SUDO_USER:-$SUDO_USER}" # si se invoca con sudo, usa SUDO_USER
 echo "🔧 Añadiendo \$USER_REAL al grupo kvm"
 adduser "$USER_REAL" kvm || true
 
