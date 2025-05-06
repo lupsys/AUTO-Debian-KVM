@@ -1,38 +1,29 @@
-# prepare-environment.sh
 #!/usr/bin/env bash
-# Script para preparar entorno KVM/QEMU con dependencias y permisos.
-# Se reejecuta automáticamente con privilegios (sudo o su).
-
-# 0. Auto-escalado de privilegios
-if [ "$EUID" -ne 0 ]; then
-  # Intentar sudo sin contraseña
-  if sudo -n true 2>/dev/null; then
-    echo "🔄 Elevando privilegios con sudo..."
-    exec sudo bash "$0" "$@"
-  else
-    echo "🔄 Elevando privilegios con 'su'..."
-    exec su - root -c "bash '$0' $*"
-  fi
-fi
-
+# Debe ejecutarse como root (sudo o su -).
 set -euo pipefail
 
-# 1. Determinar usuario objetivo
-# Si se invoca con sudo, SUDO_USER es el usuario original
-# Si se ejecuta tras 'su', se puede pasar como primer argumento
+# 1. Comprobar ejecución como root
+test "$EUID" -eq 0 || {
+  echo "Este script debe ejecutarse como root (sudo o su -)."
+  exit 1
+}
+
+# 2. Determinar usuario objetivo
+# - Si se ejecuta con sudo, SUDO_USER define el usuario original.
+# - Si se ejecuta como root directamente, puede pasarse como argumento.
 if [ -n "${SUDO_USER-}" ]; then
   TARGET_USER="$SUDO_USER"
 elif [ $# -ge 1 ]; then
   TARGET_USER="$1"
 else
   echo "Uso: $0 [usuario]
-Se detecta como root, especifica el usuario a configurar si es necesario."
+Ejecuta como root (sudo o su -). Si no usas sudo, especifica el usuario a configurar."
   exit 1
 fi
 
 echo "🔧 Usuario objetivo: $TARGET_USER"
 
-# 2. Paquetes requeridos
+# 3. Paquetes requeridos
 REQUIRED=(qemu-kvm libvirt-clients libvirt-daemon-system virtinst python3 openssl lsof psmisc)
 
 echo "🔍 Comprobando dependencias..."
@@ -45,25 +36,39 @@ for pkg in "${REQUIRED[@]}"; do
   fi
 done
 
-# 3. Activar y arrancar libvirtd
+# 4. Activar y arrancar libvirtd
 echo "🔧 Habilitando y arrancando libvirtd"
 systemctl enable --now libvirtd
 
-# 4. Añadir usuario al grupo kvm
+# 5. Añadir usuario al grupo kvm
 echo "🔧 Añadiendo $TARGET_USER al grupo kvm"
-usermod -aG kvm "$TARGET_USER" || true
+usermod -aG kvm "$TARGET_USER"
 
-# 5. Configurar sudoers sin contraseña
-SUDOERS_FILE="/etc/sudoers.d/$TARGET_USER"
-echo "🔧 Escribiendo configuración sudoers en $SUDOERS_FILE"
-echo "$TARGET_USER ALL=(ALL) NOPASSWD:ALL" >"$SUDOERS_FILE"
-chmod 0440 "$SUDOERS_FILE"
+# 6. Editar /etc/sudoers
+# Inserta debajo de la línea de root la entrada para TARGET_USER
+echo "🔧 Editando /etc/sudoers para añadir '$TARGET_USER'"
+# Hacer copia de seguridad
+cp /etc/sudoers /etc/sudoers.bak
+# Insertar usando sed
+sed -i "/^root[[:space:]]\+ALL=(ALL:ALL) ALL/ a \
+$TARGET_USER ALL=(ALL:ALL) ALL" /etc/sudoers
+# Validar sintaxis
+visudo -c
 
-# 6. Mensaje final
+# 7. Mensaje final
 cat <<EOF
 ✅ Entorno preparado para '$TARGET_USER'.
 Dependencias: ${REQUIRED[*]}.
-- '$TARGET_USER' en grupo kvm.
-- Sudo sin contraseña en $SUDOERS_FILE.
-Para crear la VM, ejecuta create-debian-vm.sh desde tu repo.
+- '$TARGET_USER' añadido al grupo kvm.
+- /etc/sudoers actualizado con privilegios equivalentes a root.
+
+Ahora puedes ejecutar create-debian-vm.sh desde tu repositorio para crear la VM.
+EOF mensaje final
+cat <<EOF
+✅ Entorno preparado para '$TARGET_USER'.
+Dependencias: ${REQUIRED[*]}.
+- '$TARGET_USER' añadido al grupo kvm.
+- Sudo sin contraseña configurado en $SUDOERS_FILE.
+
+Ahora puedes ejecutar create-debian-vm.sh desde tu repositorio para crear la VM.
 EOF
