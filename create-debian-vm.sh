@@ -11,7 +11,7 @@ PRESEED_DIR="/home/lupsys/preseed"
 PRESEED_URL_BASE="http://${HOST_IP}:${PORT}"
 VM_NAME="debian-auto-$(date +%s)"
 DISK_PATH="/var/lib/libvirt/images/${VM_NAME}.qcow2"
-ISO_PATH="/home/lupsys/Downloads/debian-12.10.0-amd64-netinst.iso"
+#ISO_PATH="/home/lupsys/Downloads/debian-12.10.0-amd64-netinst.iso"
 
 # Usuario objetivo: si hay SUDO_USER, úsalo; si no, el efectivo $USER
 TARGET_USER="${SUDO_USER:-$USER}"
@@ -42,12 +42,13 @@ sudo virt-install \
   --ram 2048 \
   --vcpus 2 \
   --disk path="${DISK_PATH}",size=20 \
+  --os-type linux \
   --os-variant debian12 \
   --network network=default \
-  --graphics spice \
-  --video qxl \
+  --graphics spice,listen=none \
+  --video virtio \
   --channel spicevmc,target_type=virtio \
-  --location "${ISO_PATH}" \
+  --location "http://deb.debian.org/debian/dists/bookworm/main/installer-amd64/" \
   --extra-args "auto=true priority=critical \
 preseed/url=${PRESEED_URL_BASE}/${PRESEED_FILE} \
 ip=dhcp \

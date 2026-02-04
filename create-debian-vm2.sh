@@ -30,7 +30,7 @@ virt-install \
   --ram 2048 --vcpus 2 \
   --disk path="$DISK_PATH",size=20 \
   --network network=default \
-  --graphics spice --video qxl \
+  --graphics spice --video virtio \
   --channel spicevmc,target_type=virtio,name=com.redhat.spice.0 \
   --location "$ISO_URL" \
   --extra-args "auto=true priority=critical \
