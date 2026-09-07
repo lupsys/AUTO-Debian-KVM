@@ -3,7 +3,7 @@ set -euo pipefail
 
 # URLs remotas de los scripts en GitHub
 PREPARE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/prepare-enviroment.sh"
-CREATE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/create-debian-vm.sh"
+CREATE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/create-debain-vm2.sh"
 
 # Función para detectar e instalar dependencias según la distro
 detect_pkg_manager() {
@@ -46,15 +46,15 @@ select opt in "${options[@]}"; do
     break
     ;;
   "Instalar VM (local)")
-    if [ -f "create-debian-vm.sh" ]; then
-      sudo bash create-debian-vm.sh
+    if [ -f "create-debain-vm2.sh" ]; then
+      sudo bash create-debain-vm2.sh
     else
-      echo "Error: create-debian-vm.sh no existe localmente."
+      echo "Error: create-debain-vm2.sh no existe localmente."
     fi
     break
     ;;
   "Instalar VM (GitHub)")
-    echo "--> Descargando create-debian-vm.sh..."
+    echo "--> Descargando create-debain-vm2.sh..."
     curl -fL --retry 3 --retry-delay 2 "${CREATE_URL}?nocache=$(date +%s)" | sudo bash -x
     break
     ;;
