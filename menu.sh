@@ -5,6 +5,25 @@ set -euo pipefail
 PREPARE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/refs/heads/main/prepare-enviroment.sh"
 CREATE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/create-debian-vm.sh"
 
+# Función para detectar e instalar mediante el gestor del sistema
+detect_pkg_manager() {
+  if command -v paru &>/dev/null; then
+    paru -S --noconfirm qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt iptables-nft
+  elif command -v yay &>/dev/null; then
+    yay -S --noconfirm qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt iptables-nft
+  elif command -v pacman &>/dev/null; then
+    sudo pacman -S --noconfirm qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt iptables-nft
+  elif command -v apt-get &>/dev/null; then
+    sudo apt-get update
+    sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+  elif command -v dnf &>/dev/null; then
+    sudo dnf install -y qemu-kvm libvirt virt-manager bridge-utils
+  else
+    echo "Gestor de paquetes no soportado." >&2
+    exit 1
+  fi
+}
+
 # Opciones del menú
 options=(
   "Instalar dependencias (local)"
@@ -18,19 +37,31 @@ PS3="Seleccione una opción [1-${#options[@]}]: "
 select opt in "${options[@]}"; do
   case "$opt" in
   "Instalar dependencias (local)")
-    sudo bash prepare-environment.sh
+    detect_pkg_manager
+    if [ -f "prepare-environment.sh" ]; then
+      sudo bash prepare-environment.sh
+    else
+      echo "Error: prepare-environment.sh no existe localmente."
+    fi
     break
     ;;
   "Instalar dependencias (GitHub)")
-    sudo bash -c "$(curl -fsSL "$PREPARE_URL")"
+    detect_pkg_manager
+    echo "--> Descargando prepare-environment.sh..."
+    curl -fL --retry 3 --retry-delay 2 "$PREPARE_URL" | sudo bash -x
     break
     ;;
   "Instalar VM (local)")
-    sudo bash create-debian-vm.sh
+    if [ -f "create-debian-vm.sh" ]; then
+      sudo bash create-debian-vm.sh
+    else
+      echo "Error: create-debian-vm.sh no existe localmente."
+    fi
     break
     ;;
   "Instalar VM (GitHub)")
-    sudo bash -c "$(curl -fsSL "$CREATE_URL")"
+    echo "--> Descargando create-debian-vm.sh..."
+    curl -fL --retry 3 --retry-delay 2 "$CREATE_URL" | sudo bash -x
     break
     ;;
   "Salir")
