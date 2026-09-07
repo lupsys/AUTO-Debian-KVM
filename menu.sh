@@ -48,7 +48,7 @@ select opt in "${options[@]}"; do
   "Instalar dependencias (GitHub)")
     detect_pkg_manager
     echo "--> Descargando prepare-environment.sh..."
-    curl -fL --retry 3 --retry-delay 2 "$PREPARE_URL" | sudo bash -x
+    curl -fL --retry 3 --retry-delay 2 "$PREPARE_URL?nocache=$(date+%s)" | sudo bash -x
     break
     ;;
   "Instalar VM (local)")
