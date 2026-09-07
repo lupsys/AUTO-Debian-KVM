@@ -1,0 +1,7 @@
+# Archivos de credenciales y registros locales
+creds-*.txt
+*.log
+preseed/debug.log
+preseed/user.txt
+/tmp/auto-debian-*
+.DS_Store
