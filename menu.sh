@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# URLs remotas de los scripts en tu GitHub
-PREPARE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/refs/heads/main/prepare-enviroment.sh"
+# URLs remotas de los scripts en GitHub
+PREPARE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/prepare-enviroment.sh"
 CREATE_URL="https://raw.githubusercontent.com/lupsys/AUTO-Debian-KVM/main/create-debian-vm.sh"
 
-# Función para detectar e instalar mediante el gestor del sistema
+# Función para detectar e instalar dependencias según la distro
 detect_pkg_manager() {
+  echo "--> Detectando e instalando dependencias..."
   if command -v paru &>/dev/null; then
     paru -S --noconfirm qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt iptables-nft
   elif command -v yay &>/dev/null; then
@@ -24,7 +25,6 @@ detect_pkg_manager() {
   fi
 }
 
-# Opciones del menú
 options=(
   "Instalar dependencias (local)"
   "Instalar dependencias (GitHub)"
@@ -38,17 +38,11 @@ select opt in "${options[@]}"; do
   case "$opt" in
   "Instalar dependencias (local)")
     detect_pkg_manager
-    if [ -f "prepare-environment.sh" ]; then
-      sudo bash prepare-environment.sh
-    else
-      echo "Error: prepare-environment.sh no existe localmente."
-    fi
     break
     ;;
   "Instalar dependencias (GitHub)")
-    detect_pkg_manager
     echo "--> Descargando prepare-environment.sh..."
-    curl -fL --retry 3 --retry-delay 2 "$PREPARE_URL?nocache=$(date+%s)" | sudo bash -x
+    curl -fL --retry 3 --retry-delay 2 "${PREPARE_URL}?nocache=$(date +%s)" | sudo bash -x
     break
     ;;
   "Instalar VM (local)")
@@ -61,7 +55,7 @@ select opt in "${options[@]}"; do
     ;;
   "Instalar VM (GitHub)")
     echo "--> Descargando create-debian-vm.sh..."
-    curl -fL --retry 3 --retry-delay 2 "$CREATE_URL" | sudo bash -x
+    curl -fL --retry 3 --retry-delay 2 "${CREATE_URL}?nocache=$(date +%s)" | sudo bash -x
     break
     ;;
   "Salir")
